@@ -22,11 +22,12 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     
     entities = []
-    for device_id in coordinator.data:
-        entities.extend((
-            PlantSipPowerSupplyBinarySensor(coordinator, device_id),
-            PlantSipBatteryChargingBinarySensor(coordinator, device_id),
-        ))
+    for device_id, device_data in coordinator.data.items():
+        if device_data.get("available", False):
+            entities.extend((
+                PlantSipPowerSupplyBinarySensor(coordinator, device_id),
+                PlantSipBatteryChargingBinarySensor(coordinator, device_id),
+            ))
     
     async_add_entities(entities)
 

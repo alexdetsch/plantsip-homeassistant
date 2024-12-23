@@ -25,15 +25,23 @@ async def async_setup_entry(
     
     entities = []
     for device_id, device_data in coordinator.data.items():
+        if not device_data.get("available", False):
+            continue
+            
+        device = device_data.get("device", {})
+        channels = device.get("channels", [])
+        
         # Add moisture sensor for each channel
-        for channel in device_data["device"]["channels"]:
-            entities.append(
-                PlantSipMoistureSensor(
-                    coordinator,
-                    device_id,
-                    channel["channel_index"],
+        for channel in channels:
+            channel_index = channel.get("channel_index")
+            if channel_index is not None:
+                entities.append(
+                    PlantSipMoistureSensor(
+                        coordinator,
+                        device_id,
+                        channel_index,
+                    )
                 )
-            )
         
         # Add water level sensor
         entities.append(
@@ -47,11 +55,13 @@ async def async_setup_entry(
         ])
         
         # Add last watered sensors for each channel
-        for channel in device_data["device"]["channels"]:
-            entities.extend([
-                PlantSipLastWateredSensor(coordinator, device_id, channel["channel_index"]),
-                PlantSipLastWateringDurationSensor(coordinator, device_id, channel["channel_index"]),
-            ])
+        for channel in channels:
+            channel_index = channel.get("channel_index")
+            if channel_index is not None:
+                entities.extend([
+                    PlantSipLastWateredSensor(coordinator, device_id, channel_index),
+                    PlantSipLastWateringDurationSensor(coordinator, device_id, channel_index),
+                ])
             
         # Add firmware version sensor
         entities.append(
