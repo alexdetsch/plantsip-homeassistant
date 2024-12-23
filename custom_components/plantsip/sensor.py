@@ -239,3 +239,121 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         return self.coordinator.data[self._device_id]["status"]["battery_level"]
 
+
+class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a last watered timestamp sensor."""
+
+    def __init__(self, coordinator, device_id, channel_index):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._channel_index = channel_index
+        self._attr_device_class = SensorDeviceClass.TIMESTAMP
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        
+        device_data = coordinator.data[device_id]["device"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_data["name"],
+            manufacturer=MANUFACTURER,
+            model="PlantSip Device",
+            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
+        )
+        
+    @property
+    def unique_id(self):
+        """Return unique ID for the sensor."""
+        return f"{self._device_id}_last_watered_{self._channel_index}"
+        
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        device_name = self.coordinator.data[self._device_id]["device"]["name"]
+        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "last_watered"
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+        channel = next(
+            (c for c in self.coordinator.data[self._device_id]["device"]["channels"]
+             if c["channel_index"] == self._channel_index),
+            None
+        )
+        return channel["last_watered"] if channel else None
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
+
+
+class PlantSipLastWateringDurationSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a last watering duration sensor."""
+
+    def __init__(self, coordinator, device_id, channel_index):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._channel_index = channel_index
+        self._attr_device_class = SensorDeviceClass.DURATION
+        self._attr_native_unit_of_measurement = "s"
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_suggested_display_precision = 0
+        
+        device_data = coordinator.data[device_id]["device"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_data["name"],
+            manufacturer=MANUFACTURER,
+            model="PlantSip Device",
+            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
+        )
+        
+    @property
+    def unique_id(self):
+        """Return unique ID for the sensor."""
+        return f"{self._device_id}_last_watering_duration_{self._channel_index}"
+        
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        device_name = self.coordinator.data[self._device_id]["device"]["name"]
+        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "last_watering_duration"
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+        channel = next(
+            (c for c in self.coordinator.data[self._device_id]["device"]["channels"]
+             if c["channel_index"] == self._channel_index),
+            None
+        )
+        return channel["last_watering_duration"] if channel else None
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
+
