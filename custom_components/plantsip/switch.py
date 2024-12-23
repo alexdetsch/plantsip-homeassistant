@@ -80,6 +80,11 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
         """Return true if switch is on."""
         return self._is_on
 
+    @property
+    def icon(self):
+        """Return the icon."""
+        return "mdi:water" if self.is_on else "mdi:water-off"
+
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         try:
@@ -92,6 +97,9 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             self.async_write_ha_state()
         except Exception as error:
             _LOGGER.error("Failed to trigger watering: %s", error)
+            self._is_on = False
+            self.async_write_ha_state()
+            raise
 
     async def async_turn_off(self, **kwargs):
         """Turn the switch off."""

@@ -6,6 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -60,6 +61,8 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.MOISTURE
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "%"
+        self._attr_suggested_display_precision = 1
+        self._attr_icon = "mdi:water-percent"
         
         device_data = coordinator.data[device_id]["device"]
         self._attr_device_info = DeviceInfo(
@@ -103,6 +106,8 @@ class PlantSipWaterLevelSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "%"
+        self._attr_suggested_display_precision = 1
+        self._attr_icon = "mdi:gauge"
         
     @property
     def unique_id(self):
@@ -136,6 +141,9 @@ class PlantSipBatteryVoltageSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.VOLTAGE
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "V"
+        self._attr_suggested_display_precision = 2
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_icon = "mdi:battery-charging-100"
         
     @property
     def unique_id(self):
@@ -169,6 +177,8 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "%"
+        self._attr_suggested_display_precision = 0
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
         
     @property
     def unique_id(self):
@@ -196,6 +206,8 @@ class PlantSipPowerSupplySensor(CoordinatorEntity, SensorEntity):
         self._device_id = device_id
         self._attr_device_class = SensorDeviceClass.ENUM
         self._attr_options = ["connected", "disconnected"]
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_icon = "mdi:power-plug"
         
     @property
     def unique_id(self):
@@ -223,6 +235,8 @@ class PlantSipBatteryChargingSensor(CoordinatorEntity, SensorEntity):
         self._device_id = device_id
         self._attr_device_class = SensorDeviceClass.ENUM
         self._attr_options = ["charging", "not_charging"]
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_icon = "mdi:battery-charging"
         
     @property
     def unique_id(self):
