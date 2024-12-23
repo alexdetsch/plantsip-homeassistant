@@ -1,6 +1,8 @@
 """Sensor platform for PlantSip."""
 from __future__ import annotations
 
+from datetime import datetime
+import pytz
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -352,7 +354,19 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
             str(self._channel_index)
         )
-        return channel_data["last_watered"] if channel_data else None
+        if not channel_data or not channel_data.get("last_watered"):
+            return None
+            
+        # Parse the timestamp and ensure it has timezone info
+        try:
+            timestamp = channel_data["last_watered"]
+            # If the timestamp already contains timezone info, parse it directly
+            if 'Z' in timestamp or '+' in timestamp:
+                return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            # Otherwise, assume UTC and add timezone info
+            return datetime.fromisoformat(timestamp).replace(tzinfo=pytz.UTC)
+        except (ValueError, TypeError):
+            return None
 
     @property
     def available(self) -> bool:

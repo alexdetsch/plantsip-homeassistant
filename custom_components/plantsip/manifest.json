@@ -5,7 +5,7 @@
     "issue_tracker": "https://github.com/alexdetsch/ha-plantsip/issues",
     "dependencies": [],
     "codeowners": ["@alexdetsch"],
-    "requirements": ["aiohttp>=3.8.0"],
+    "requirements": ["aiohttp>=3.8.0", "pytz>=2023.3"],
     "config_flow": true,
     "iot_class": "cloud_polling",
     "version": "1.0.0",
