@@ -18,7 +18,7 @@ This custom integration allows you to monitor and control your PlantSip plant wa
 2. Go to HACS > Integrations
 3. Click on the three dots in the top right corner
 4. Click "Custom repositories"
-5. Add `alex-detsch/ha-plantsip` as a custom repository
+5. Add `alexdetsch/ha-plantsip` as a custom repository
 6. Click "Install" on the PlantSip integration
 7. Restart Home Assistant
 
@@ -51,7 +51,7 @@ For each PlantSip device, the following entities will be created:
 
 ## Support
 
-For bugs and feature requests, please [open an issue](https://github.com/alex-detsch/ha-plantsip/issues) on GitHub.
+For bugs and feature requests, please [open an issue](https://github.com/alexdetsch/ha-plantsip/issues) on GitHub.
 
 ## License
 

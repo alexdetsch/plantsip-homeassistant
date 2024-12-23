@@ -1,10 +1,10 @@
 {
     "domain": "plantsip",
     "name": "PlantSip",
-    "documentation": "https://github.com/alex-detsch/ha-plantsip",
-    "issue_tracker": "https://github.com/alex-detsch/ha-plantsip/issues",
+    "documentation": "https://github.com/alexdetsch/ha-plantsip",
+    "issue_tracker": "https://github.com/alexdetsch/ha-plantsip/issues",
     "dependencies": [],
-    "codeowners": ["@alex-detsch"],
+    "codeowners": ["@alexdetsch"],
     "requirements": ["aiohttp>=3.8.0"],
     "config_flow": true,
     "iot_class": "cloud_polling",
