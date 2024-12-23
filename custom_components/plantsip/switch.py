@@ -85,8 +85,21 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
         """Return the icon."""
         return "mdi:water" if self.is_on else "mdi:water-off"
 
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
+
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
+        if not self.available:
+            _LOGGER.error("Device %s is not available", self._device_id)
+            return
+
         try:
             await self._api.trigger_watering(
                 self._device_id,
@@ -98,6 +111,7 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
         except Exception as error:
             _LOGGER.error("Failed to trigger watering: %s", error)
             self._is_on = False
+            self.coordinator.data[self._device_id]["available"] = False
             self.async_write_ha_state()
             raise
 

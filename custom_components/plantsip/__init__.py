@@ -70,6 +70,7 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=SCAN_INTERVAL,
         )
         self.api = api
+        self.last_update_success = True
 
     async def _async_update_data(self):
         """Fetch data from API endpoint."""
@@ -81,8 +82,11 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
                 status = await self.api.get_device_status(device_id)
                 data[device_id] = {
                     "device": device,
-                    "status": status
+                    "status": status,
+                    "available": True
                 }
+            self.last_update_success = True
             return data
         except PlantSipError as err:
+            self.last_update_success = False
             raise UpdateFailed(f"Error communicating with PlantSip API: {err}")

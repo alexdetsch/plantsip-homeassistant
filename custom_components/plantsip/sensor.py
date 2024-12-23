@@ -92,8 +92,19 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
+        if not self.available:
+            return None
         return self.coordinator.data[self._device_id]["status"]["moisture_readings"].get(
             str(self._channel_index)
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
         )
 
 class PlantSipWaterLevelSensor(CoordinatorEntity, SensorEntity):
