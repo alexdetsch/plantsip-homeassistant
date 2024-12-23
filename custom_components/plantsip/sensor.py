@@ -236,6 +236,15 @@ class PlantSipPowerSupplySensor(CoordinatorEntity, SensorEntity):
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_icon = "mdi:power-plug"
         
+        device_data = coordinator.data[device_id]["device"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_data["name"],
+            manufacturer=MANUFACTURER,
+            model="PlantSip Device",
+            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
+        )
+        
     @property
     def unique_id(self):
         """Return unique ID for the sensor."""
