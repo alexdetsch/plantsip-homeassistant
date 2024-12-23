@@ -34,18 +34,10 @@
                 "name": "Batteriestand"
             },
             "power_supply": {
-                "name": "Stromversorgung",
-                "state": {
-                    "connected": "Verbunden",
-                    "disconnected": "Getrennt"
-                }
+                "name": "Stromversorgung"
             },
             "battery_charging": {
-                "name": "Batterieladung",
-                "state": {
-                    "charging": "Lädt",
-                    "not_charging": "Lädt nicht"
-                }
+                "name": "Batterieladung"
             }
         },
         "switch": {

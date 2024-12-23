@@ -44,8 +44,6 @@ async def async_setup_entry(
         entities.extend([
             PlantSipBatteryVoltageSensor(coordinator, device_id),
             PlantSipBatteryLevelSensor(coordinator, device_id),
-            PlantSipPowerSupplySensor(coordinator, device_id),
-            PlantSipBatteryChargingSensor(coordinator, device_id),
         ])
     
     async_add_entities(entities)
@@ -234,78 +232,3 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         return self.coordinator.data[self._device_id]["status"]["battery_level"]
 
-
-class PlantSipPowerSupplySensor(CoordinatorEntity, SensorEntity):
-    """Representation of a power supply sensor."""
-
-    def __init__(self, coordinator, device_id):
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._device_id = device_id
-        self._attr_device_class = SensorDeviceClass.ENUM
-        self._attr_options = ["connected", "disconnected"]
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        self._attr_icon = "mdi:power-plug"
-        
-        device_data = coordinator.data[device_id]["device"]
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_id)},
-            name=device_data["name"],
-            manufacturer=MANUFACTURER,
-            model="PlantSip Device",
-            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
-        )
-        
-    @property
-    def unique_id(self):
-        """Return unique ID for the sensor."""
-        return f"{self._device_id}_power_supply"
-        
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Power Supply"
-
-    @property
-    def native_value(self):
-        """Return the state of the sensor."""
-        return "connected" if self.coordinator.data[self._device_id]["status"]["power_supply_connected"] else "disconnected"
-
-
-class PlantSipBatteryChargingSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a battery charging sensor."""
-
-    def __init__(self, coordinator, device_id):
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._device_id = device_id
-        self._attr_device_class = SensorDeviceClass.ENUM
-        self._attr_options = ["charging", "not_charging"]
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        self._attr_icon = "mdi:battery-charging"
-        
-        device_data = coordinator.data[device_id]["device"]
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_id)},
-            name=device_data["name"],
-            manufacturer=MANUFACTURER,
-            model="PlantSip Device",
-            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
-        )
-        
-    @property
-    def unique_id(self):
-        """Return unique ID for the sensor."""
-        return f"{self._device_id}_battery_charging"
-        
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Battery Charging"
-
-    @property
-    def native_value(self):
-        """Return the state of the sensor."""
-        return "charging" if self.coordinator.data[self._device_id]["status"]["battery_charging"] else "not_charging"

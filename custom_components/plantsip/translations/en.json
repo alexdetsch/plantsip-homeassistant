@@ -34,18 +34,10 @@
                 "name": "Battery Level"
             },
             "power_supply": {
-                "name": "Power Supply",
-                "state": {
-                    "connected": "Connected",
-                    "disconnected": "Disconnected"
-                }
+                "name": "Power Supply"
             },
             "battery_charging": {
-                "name": "Battery Charging",
-                "state": {
-                    "charging": "Charging",
-                    "not_charging": "Not Charging"
-                }
+                "name": "Battery Charging"
             }
         },
         "switch": {
