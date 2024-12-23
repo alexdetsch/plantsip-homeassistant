@@ -78,15 +78,30 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
             devices = await self.api.get_devices()
             data = {}
             for device in devices:
-                device_id = device["device_id"]
-                status = await self.api.get_device_status(device_id)
-                data[device_id] = {
-                    "device": device,
-                    "status": status,
-                    "available": True
-                }
+                try:
+                    device_id = device["device_id"]
+                    status = await self.api.get_device_status(device_id)
+                    data[device_id] = {
+                        "device": device,
+                        "status": status,
+                        "available": True
+                    }
+                except Exception as device_err:
+                    _LOGGER.error("Error fetching status for device %s: %s", device.get("device_id", "unknown"), str(device_err))
+                    continue
+            
+            if not data:
+                self.last_update_success = False
+                raise UpdateFailed("No device data could be fetched")
+                
             self.last_update_success = True
             return data
+            
         except PlantSipError as err:
             self.last_update_success = False
+            _LOGGER.error("PlantSip API error: %s", str(err))
             raise UpdateFailed(f"Error communicating with PlantSip API: {err}")
+        except Exception as err:
+            self.last_update_success = False
+            _LOGGER.error("Unexpected error in PlantSip update: %s", str(err), exc_info=True)
+            raise UpdateFailed(f"Unexpected error: {err}")
