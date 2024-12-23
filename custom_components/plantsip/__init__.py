@@ -83,11 +83,35 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
                     if not isinstance(device, dict):
                         _LOGGER.error("Invalid device data format: %s", device)
                         continue
+                    
                     device_id = str(device.get("device_id"))
                     if not device_id:
                         _LOGGER.error("Device missing device_id: %s", device)
                         continue
+                        
                     status = await self.api.get_device_status(device_id)
+                    
+                    # Ensure channels exist and are properly formatted
+                    channels = device.get("channels", [])
+                    if not isinstance(channels, list):
+                        _LOGGER.error("Invalid channels format for device %s: %s", device_id, channels)
+                        channels = []
+                        
+                    # Process each channel
+                    processed_channels = []
+                    for channel in channels:
+                        if isinstance(channel, dict):
+                            channel_index = channel.get("channel_index")
+                            if channel_index is not None:
+                                processed_channels.append(channel)
+                            else:
+                                _LOGGER.error("Channel missing channel_index in device %s: %s", device_id, channel)
+                        else:
+                            _LOGGER.error("Invalid channel format in device %s: %s", device_id, channel)
+                    
+                    # Update device data with processed channels
+                    device["channels"] = processed_channels
+                    
                     data[device_id] = {
                         "device": device,
                         "status": status,
