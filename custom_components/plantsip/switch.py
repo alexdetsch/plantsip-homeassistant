@@ -33,16 +33,13 @@ async def async_setup_entry(
         
         for channel in channels:
             channel_index = channel.get("channel_index")
-            manual_water_amount = channel.get("manual_water_amount")
-            
-            if channel_index is not None and manual_water_amount is not None:
+            if channel_index is not None:
                 entities.append(
                     PlantSipWateringSwitch(
                         coordinator,
                         api,
                         device_id,
                         channel_index,
-                        manual_water_amount,
                     )
                 )
     
@@ -51,14 +48,14 @@ async def async_setup_entry(
 class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
     """Representation of a watering switch."""
 
-    def __init__(self, coordinator, api, device_id, channel_index, water_amount):
+    def __init__(self, coordinator, api, device_id, channel_index):
         """Initialize the switch."""
         super().__init__(coordinator)
         self._api = api
         self._device_id = device_id
         self._channel_index = channel_index
-        self._water_amount = water_amount
         self._is_on = False
+        self._attr_icon = "mdi:water" 
         
         device_data = coordinator.data[device_id]["device"]
         self._attr_device_info = DeviceInfo(
@@ -104,6 +101,21 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             and self.coordinator.data[self._device_id].get("available", False)
         )
 
+    @property
+    def extra_state_attributes(self):
+        """Return entity specific state attributes."""
+        if not self.available:
+            return {}
+            
+        channel_data = next(
+            (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
+             if ch.get("channel_index") == self._channel_index),
+            {}
+        )
+        return {
+            "manual_water_amount": channel_data.get("manual_water_amount", 0)
+        }
+
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         if not self.available:
@@ -111,10 +123,22 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             return
 
         try:
+            channel_data = next(
+                (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
+                 if ch.get("channel_index") == self._channel_index),
+                {}
+            )
+            water_amount = channel_data.get("manual_water_amount", 0)
+            
+            if water_amount <= 0:
+                _LOGGER.error("Invalid water amount for device %s channel %s", 
+                            self._device_id, self._channel_index)
+                return
+                
             await self._api.trigger_watering(
                 self._device_id,
                 self._channel_index,
-                self._water_amount,
+                water_amount,
             )
             self._is_on = True
             self.async_write_ha_state()
