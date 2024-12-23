@@ -45,6 +45,13 @@ async def async_setup_entry(
             PlantSipBatteryVoltageSensor(coordinator, device_id),
             PlantSipBatteryLevelSensor(coordinator, device_id),
         ])
+        
+        # Add last watered sensors for each channel
+        for channel in device_data["device"]["channels"]:
+            entities.extend([
+                PlantSipLastWateredSensor(coordinator, device_id, channel["channel_index"]),
+                PlantSipLastWateringDurationSensor(coordinator, device_id, channel["channel_index"]),
+            ])
     
     async_add_entities(entities)
 

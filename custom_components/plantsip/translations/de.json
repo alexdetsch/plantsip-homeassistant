@@ -38,6 +38,12 @@
             },
             "battery_charging": {
                 "name": "Batterieladung"
+            },
+            "last_watered": {
+                "name": "Zuletzt bewässert"
+            },
+            "last_watering_duration": {
+                "name": "Letzte Bewässerungsdauer"
             }
         },
         "switch": {
