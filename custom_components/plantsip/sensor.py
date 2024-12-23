@@ -52,6 +52,11 @@ async def async_setup_entry(
                 PlantSipLastWateredSensor(coordinator, device_id, channel["channel_index"]),
                 PlantSipLastWateringDurationSensor(coordinator, device_id, channel["channel_index"]),
             ])
+            
+        # Add firmware version sensor
+        entities.append(
+            PlantSipFirmwareVersionSensor(coordinator, device_id)
+        )
     
     async_add_entities(entities)
 
@@ -102,6 +107,58 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
         return self.coordinator.data[self._device_id]["status"]["moisture_readings"].get(
             str(self._channel_index)
         )
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
+
+
+class PlantSipFirmwareVersionSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a firmware version sensor."""
+
+    def __init__(self, coordinator, device_id):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_icon = "mdi:cellphone-arrow-down"
+        
+        device_data = coordinator.data[device_id]["device"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_data["name"],
+            manufacturer=MANUFACTURER,
+            model="PlantSip Device",
+            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
+        )
+        
+    @property
+    def unique_id(self):
+        """Return unique ID for the sensor."""
+        return f"{self._device_id}_firmware_version"
+        
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        device_name = self.coordinator.data[self._device_id]["device"]["name"]
+        return f"{device_name} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "firmware_version"
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+        return self.coordinator.data[self._device_id]["status"]["firmware_version"]
 
     @property
     def available(self) -> bool:
