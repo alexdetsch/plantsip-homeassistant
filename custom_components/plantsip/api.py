@@ -55,10 +55,10 @@ class PlantSipAPI:
         response = await self._request("GET", "/devices")
         _LOGGER.debug("Got devices response: %s", response)
         
-        # Handle both list and dictionary responses
+        # Handle different response formats
         if isinstance(response, dict):
-            # If it's a dictionary with a data field containing the devices
-            devices = response.get("data", [])
+            # Check for devices in "devices" or "data" field
+            devices = response.get("devices") or response.get("data", [])
             if not isinstance(devices, list):
                 raise PlantSipApiError(f"Invalid devices data format: {type(devices)}")
             return devices
