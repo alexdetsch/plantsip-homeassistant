@@ -8,8 +8,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import DOMAIN, MANUFACTURER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +49,15 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
         self._channel_index = channel_index
         self._water_amount = water_amount
         self._is_on = False
+        
+        device_data = coordinator.data[device_id]["device"]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_data["name"],
+            manufacturer=MANUFACTURER,
+            model="PlantSip Device",
+            sw_version=coordinator.data[device_id]["status"]["firmware_version"],
+        )
         
     @property
     def unique_id(self):
