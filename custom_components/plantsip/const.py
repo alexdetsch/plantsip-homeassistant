@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 DOMAIN = "plantsip"
+MANUFACTURER = "PlantSip"
 SCAN_INTERVAL = timedelta(minutes=2)
 
 # Configuration
