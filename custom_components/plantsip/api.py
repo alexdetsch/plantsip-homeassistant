@@ -29,9 +29,9 @@ class PlantSipAPI:
             "Authorization": f"Bearer {self._access_token}",
             "Content-Type": "application/json",
         }
-        
-        url = f"{self._host}/v1{path}"
-        
+
+        url = f"{self._host}{path}"
+
         try:
             async with self._session.request(
                 method, url, headers=headers, **kwargs
@@ -44,7 +44,7 @@ class PlantSipAPI:
                         f"API request failed with status {response.status}: {error_detail}"
                     )
                 return await response.json()
-                
+
         except ClientError as err:
             raise PlantSipConnectionError(f"Failed to connect to PlantSip API: {err}") from err
         except asyncio.TimeoutError as err:
