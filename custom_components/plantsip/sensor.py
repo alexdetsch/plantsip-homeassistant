@@ -60,7 +60,7 @@ async def async_setup_entry(
             if channel_index is not None:
                 entities.extend([
                     PlantSipLastWateredSensor(coordinator, device_id, channel_index),
-                    PlantSipLastWateringDurationSensor(coordinator, device_id, channel_index),
+                    PlantSipLastWateringAmountSensor(coordinator, device_id, channel_index),
                 ])
             
         # Add firmware version sensor
@@ -114,9 +114,10 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        return self.coordinator.data[self._device_id]["status"]["moisture_readings"].get(
+        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
             str(self._channel_index)
         )
+        return channel_data["moisture_level"] if channel_data else None
 
     @property
     def available(self) -> bool:
@@ -348,12 +349,10 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel = next(
-            (c for c in self.coordinator.data[self._device_id]["device"]["channels"]
-             if c["channel_index"] == self._channel_index),
-            None
+        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
+            str(self._channel_index)
         )
-        return channel["last_watered"] if channel else None
+        return channel_data["last_watered"] if channel_data else None
 
     @property
     def available(self) -> bool:
@@ -365,16 +364,16 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         )
 
 
-class PlantSipLastWateringDurationSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a last watering duration sensor."""
+class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a last watering amount sensor."""
 
     def __init__(self, coordinator, device_id, channel_index):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._device_id = device_id
         self._channel_index = channel_index
-        self._attr_device_class = SensorDeviceClass.DURATION
-        self._attr_native_unit_of_measurement = "s"
+        self._attr_device_class = None
+        self._attr_native_unit_of_measurement = "ml"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_suggested_display_precision = 0
         
@@ -401,19 +400,17 @@ class PlantSipLastWateringDurationSensor(CoordinatorEntity, SensorEntity):
     @property
     def translation_key(self) -> str:
         """Return the translation key."""
-        return "last_watering_duration"
+        return "last_watering_amount"
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel = next(
-            (c for c in self.coordinator.data[self._device_id]["device"]["channels"]
-             if c["channel_index"] == self._channel_index),
-            None
+        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
+            str(self._channel_index)
         )
-        return channel["last_watering_duration"] if channel else None
+        return channel_data["last_watering_amount"] if channel_data else None
 
     @property
     def available(self) -> bool:

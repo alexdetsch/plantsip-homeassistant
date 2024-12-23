@@ -42,8 +42,8 @@
             "last_watered": {
                 "name": "Last Watered"
             },
-            "last_watering_duration": {
-                "name": "Last Watering Duration"
+            "last_watering_amount": {
+                "name": "Last Watering Amount"
             },
             "firmware_version": {
                 "name": "Firmware Version"

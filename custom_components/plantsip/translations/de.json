@@ -42,8 +42,8 @@
             "last_watered": {
                 "name": "Zuletzt bewässert"
             },
-            "last_watering_duration": {
-                "name": "Letzte Bewässerungsdauer"
+            "last_watering_amount": {
+                "name": "Letzte Bewässerungsmenge"
             },
             "firmware_version": {
                 "name": "Firmware-Version"
