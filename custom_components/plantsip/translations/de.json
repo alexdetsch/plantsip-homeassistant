@@ -1,0 +1,57 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "PlantSip Verbindung einrichten",
+                "description": "Geben Sie Ihre PlantSip API-Zugangsdaten ein",
+                "data": {
+                    "host": "API Host (z.B. https://api.plantsip.de)",
+                    "access_token": "Zugangstoken"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Verbindung fehlgeschlagen",
+            "invalid_auth": "Ungültige Authentifizierung",
+            "unknown": "Unerwarteter Fehler"
+        },
+        "abort": {
+            "already_configured": "Gerät ist bereits konfiguriert"
+        }
+    },
+    "entity": {
+        "sensor": {
+            "moisture": {
+                "name": "Bodenfeuchtigkeit"
+            },
+            "water_level": {
+                "name": "Wasserstand"
+            },
+            "battery_voltage": {
+                "name": "Batteriespannung"
+            },
+            "battery_level": {
+                "name": "Batteriestand"
+            },
+            "power_supply": {
+                "name": "Stromversorgung",
+                "state": {
+                    "connected": "Verbunden",
+                    "disconnected": "Getrennt"
+                }
+            },
+            "battery_charging": {
+                "name": "Batterieladung",
+                "state": {
+                    "charging": "Lädt",
+                    "not_charging": "Lädt nicht"
+                }
+            }
+        },
+        "switch": {
+            "watering": {
+                "name": "Bewässerung"
+            }
+        }
+    }
+}

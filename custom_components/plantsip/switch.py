@@ -68,7 +68,12 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
     def name(self):
         """Return the name of the switch."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} Watering"
+        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "watering"
 
     @property
     def is_on(self):

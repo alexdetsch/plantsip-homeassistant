@@ -79,7 +79,12 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} Moisture"
+        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "moisture"
 
     @property
     def native_value(self):
@@ -108,7 +113,12 @@ class PlantSipWaterLevelSensor(CoordinatorEntity, SensorEntity):
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Water Level"
+        return f"{device_name} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "water_level"
 
     @property
     def native_value(self):
@@ -136,7 +146,12 @@ class PlantSipBatteryVoltageSensor(CoordinatorEntity, SensorEntity):
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Battery Voltage"
+        return f"{device_name} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "battery_voltage"
 
     @property
     def native_value(self):
