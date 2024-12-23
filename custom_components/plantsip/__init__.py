@@ -101,11 +101,16 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
                     processed_channels = []
                     for channel in channels:
                         if isinstance(channel, dict):
+                            # Try to get channel_index, fallback to id if not present
                             channel_index = channel.get("channel_index")
+                            if channel_index is None and "id" in channel:
+                                channel["channel_index"] = channel["id"]
+                                channel_index = channel["id"]
+                                
                             if channel_index is not None:
                                 processed_channels.append(channel)
                             else:
-                                _LOGGER.error("Channel missing channel_index in device %s: %s", device_id, channel)
+                                _LOGGER.error("Channel missing both channel_index and id in device %s: %s", device_id, channel)
                         else:
                             _LOGGER.error("Invalid channel format in device %s: %s", device_id, channel)
                     
