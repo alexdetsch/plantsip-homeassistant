@@ -25,16 +25,26 @@ async def async_setup_entry(
     
     entities = []
     for device_id, device_data in coordinator.data.items():
-        for channel in device_data["device"]["channels"]:
-            entities.append(
-                PlantSipWateringSwitch(
-                    coordinator,
-                    api,
-                    device_id,
-                    channel["channel_index"],
-                    channel["manual_water_amount"],
+        if not device_data.get("available", False):
+            continue
+            
+        device = device_data.get("device", {})
+        channels = device.get("channels", [])
+        
+        for channel in channels:
+            channel_index = channel.get("channel_index")
+            manual_water_amount = channel.get("manual_water_amount")
+            
+            if channel_index is not None and manual_water_amount is not None:
+                entities.append(
+                    PlantSipWateringSwitch(
+                        coordinator,
+                        api,
+                        device_id,
+                        channel_index,
+                        manual_water_amount,
+                    )
                 )
-            )
     
     async_add_entities(entities)
 
