@@ -3,6 +3,13 @@ import logging
 from typing import Any, Dict, List
 
 import aiohttp
+from aiohttp import ClientError
+
+from .exceptions import (
+    PlantSipApiError,
+    PlantSipAuthError,
+    PlantSipConnectionError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,11 +31,23 @@ class PlantSipAPI:
         
         url = f"{self._host}/v1{path}"
         
-        async with self._session.request(
-            method, url, headers=headers, **kwargs
-        ) as response:
-            response.raise_for_status()
-            return await response.json()
+        try:
+            async with self._session.request(
+                method, url, headers=headers, **kwargs
+            ) as response:
+                if response.status == 401:
+                    raise PlantSipAuthError("Invalid authentication credentials")
+                if response.status >= 400:
+                    error_detail = await response.text()
+                    raise PlantSipApiError(
+                        f"API request failed with status {response.status}: {error_detail}"
+                    )
+                return await response.json()
+                
+        except ClientError as err:
+            raise PlantSipConnectionError(f"Failed to connect to PlantSip API: {err}") from err
+        except asyncio.TimeoutError as err:
+            raise PlantSipConnectionError("Timeout while connecting to PlantSip API") from err
 
     async def get_devices(self) -> List[Dict[str, Any]]:
         """Get all devices."""

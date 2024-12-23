@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import PlantSipAPI
 from .const import DOMAIN, SCAN_INTERVAL
+from .exceptions import PlantSipError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,5 +84,5 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
                     "status": status
                 }
             return data
-        except Exception as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
+        except PlantSipError as err:
+            raise UpdateFailed(f"Error communicating with PlantSip API: {err}")
