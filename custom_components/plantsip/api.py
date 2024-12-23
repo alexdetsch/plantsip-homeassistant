@@ -52,7 +52,11 @@ class PlantSipAPI:
 
     async def get_devices(self) -> List[Dict[str, Any]]:
         """Get all devices."""
-        return await self._request("GET", "/devices")
+        response = await self._request("GET", "/devices")
+        _LOGGER.debug("Got devices response: %s", response)
+        if not isinstance(response, list):
+            raise PlantSipApiError(f"Expected list of devices, got {type(response)}")
+        return response
 
     async def get_device_status(self, device_id: str) -> Dict[str, Any]:
         """Get status of a specific device."""

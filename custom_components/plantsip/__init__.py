@@ -76,10 +76,17 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from API endpoint."""
         try:
             devices = await self.api.get_devices()
+            _LOGGER.debug("Processing devices: %s", devices)
             data = {}
             for device in devices:
                 try:
-                    device_id = device["device_id"]
+                    if not isinstance(device, dict):
+                        _LOGGER.error("Invalid device data format: %s", device)
+                        continue
+                    device_id = str(device.get("device_id"))
+                    if not device_id:
+                        _LOGGER.error("Device missing device_id: %s", device)
+                        continue
                     status = await self.api.get_device_status(device_id)
                     data[device_id] = {
                         "device": device,
