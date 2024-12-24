@@ -51,7 +51,15 @@
         },
         "switch": {
             "watering": {
-                "name": "Bewässerung"
+                "name": "Bewässerung",
+                "state_attributes": {
+                    "manual_water_amount": {
+                        "name": "Wassermenge",
+                        "state": {
+                            "unit_of_measurement": "ml"
+                        }
+                    }
+                }
             }
         }
     }

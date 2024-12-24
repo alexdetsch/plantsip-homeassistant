@@ -116,6 +116,21 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             "manual_water_amount": channel_data.get("manual_water_amount", 0)
         }
 
+    async def async_set_water_amount(self, amount: float) -> None:
+        """Set the water amount for this channel."""
+        if amount <= 0:
+            _LOGGER.error("Invalid water amount %f for device %s channel %s", 
+                        amount, self._device_id, self._channel_index)
+            return
+            
+        channel_data = next(
+            (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
+             if ch.get("channel_index") == self._channel_index),
+            {}
+        )
+        channel_data["manual_water_amount"] = amount
+        self.async_write_ha_state()
+
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         if not self.available:

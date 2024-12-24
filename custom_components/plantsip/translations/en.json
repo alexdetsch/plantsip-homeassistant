@@ -51,7 +51,15 @@
         },
         "switch": {
             "watering": {
-                "name": "Watering"
+                "name": "Watering",
+                "state_attributes": {
+                    "manual_water_amount": {
+                        "name": "Water Amount",
+                        "state": {
+                            "unit_of_measurement": "ml"
+                        }
+                    }
+                }
             }
         }
     }
