@@ -5,7 +5,8 @@
                 "title": "Set up PlantSip Connection",
                 "description": "Enter your PlantSip API credentials",
                 "data": {
-                    "host": "API Host (e.g. https://api.plantsip.de)",
+                    "use_default_server": "Use default server",
+                    "host": "Custom API Host",
                     "access_token": "Access Token"
                 }
             }

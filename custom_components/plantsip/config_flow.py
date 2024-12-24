@@ -8,6 +8,8 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_HOST
+import homeassistant.helpers.config_validation as cv
+from .const import DEFAULT_SERVER_URL, CONF_USE_DEFAULT_SERVER
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -30,8 +32,9 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
+                host = DEFAULT_SERVER_URL if user_input[CONF_USE_DEFAULT_SERVER] else user_input[CONF_HOST]
                 api = PlantSipAPI(
-                    host=user_input[CONF_HOST],
+                    host=host,
                     access_token=user_input[CONF_ACCESS_TOKEN],
                     session=async_get_clientsession(self.hass),
                 )
@@ -52,13 +55,22 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
+        if user_input is None:
+            user_input = {}
+
+        data_schema = {
+            vol.Required(
+                CONF_USE_DEFAULT_SERVER,
+                default=user_input.get(CONF_USE_DEFAULT_SERVER, True),
+            ): bool,
+            vol.Required(CONF_ACCESS_TOKEN): str,
+        }
+
+        if not user_input.get(CONF_USE_DEFAULT_SERVER, True):
+            data_schema[vol.Required(CONF_HOST, default="")] = str
+
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_HOST): str,
-                    vol.Required(CONF_ACCESS_TOKEN): str,
-                }
-            ),
+            data_schema=vol.Schema(data_schema),
             errors=errors,
         )

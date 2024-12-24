@@ -5,7 +5,8 @@
                 "title": "PlantSip Verbindung einrichten",
                 "description": "Geben Sie Ihre PlantSip API-Zugangsdaten ein",
                 "data": {
-                    "host": "API Host (z.B. https://api.plantsip.de)",
+                    "use_default_server": "Standard-Server verwenden",
+                    "host": "Benutzerdefinierter API-Host",
                     "access_token": "Zugangstoken"
                 }
             }
