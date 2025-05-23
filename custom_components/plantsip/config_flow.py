@@ -42,9 +42,15 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Test the credentials by making an API call
                 await api.get_devices()
 
+                # Store the actual host used, not just the custom one
+                final_config_data = {
+                    CONF_ACCESS_TOKEN: user_input[CONF_ACCESS_TOKEN],
+                    CONF_HOST: host, # host is already determined from user_input or default
+                    CONF_USE_DEFAULT_SERVER: user_input[CONF_USE_DEFAULT_SERVER],
+                }
                 return self.async_create_entry(
                     title="PlantSip",
-                    data=user_input,
+                    data=final_config_data,
                 )
 
             except PlantSipConnectionError:

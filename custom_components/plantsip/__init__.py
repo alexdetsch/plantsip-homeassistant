@@ -98,24 +98,30 @@ class PlantSipDataUpdateCoordinator(DataUpdateCoordinator):
                         channels = []
                         
                     # Process each channel
-                    processed_channels = []
-                    for channel in channels:
-                        if isinstance(channel, dict):
-                            # Try to get channel_index, fallback to id if not present
-                            channel_index = channel.get("channel_index")
-                            if channel_index is None and "id" in channel:
-                                channel["channel_index"] = channel["id"]
-                                channel_index = channel["id"]
-                                
-                            if channel_index is not None:
-                                processed_channels.append(channel)
+                    processed_channels_data = []
+                    for channel_api_data in channels:
+                        if isinstance(channel_api_data, dict):
+                            channel_id_pk = channel_api_data.get("id")
+                            channel_idx_display = channel_api_data.get("channel_index")
+                            
+                            if channel_id_pk is not None and channel_idx_display is not None:
+                                # We store the original channel dict from the API if it contains
+                                # 'id' and 'channel_index'. Other fields like 'manual_water_amount'
+                                # are assumed to be in this dict if needed by entities.
+                                processed_channels_data.append(channel_api_data)
                             else:
-                                _LOGGER.error("Channel missing both channel_index and id in device %s: %s", device_id, channel)
+                                _LOGGER.error(
+                                    "Channel data for device %s missing 'id' or 'channel_index': %s",
+                                    device_id,
+                                    channel_api_data,
+                                )
                         else:
-                            _LOGGER.error("Invalid channel format in device %s: %s", device_id, channel)
+                            _LOGGER.error(
+                                "Invalid channel format in device %s: %s", device_id, channel_api_data
+                            )
                     
                     # Update device data with processed channels
-                    device["channels"] = processed_channels
+                    device["channels"] = processed_channels_data
                     
                     data[device_id] = {
                         "device": device,

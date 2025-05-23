@@ -56,16 +56,17 @@ class PlantSipAPI:
         _LOGGER.debug("Got devices response: %s", response)
         
         # Handle different response formats
-        if isinstance(response, dict):
-            # Check for devices in "devices" or "data" field
-            devices = response.get("devices") or response.get("data", [])
+        if isinstance(response, dict) and "items" in response:
+            devices = response.get("items", [])
             if not isinstance(devices, list):
-                raise PlantSipApiError(f"Invalid devices data format: {type(devices)}")
+                raise PlantSipApiError(f"Invalid devices data format: expected list in 'items', got {type(devices)}")
             return devices
         elif isinstance(response, list):
+            # Fallback for non-paginated list, though OpenAPI implies pagination
+            _LOGGER.warning("Received direct list of devices, expected paginated response with 'items' key.")
             return response
         else:
-            raise PlantSipApiError(f"Unexpected response format: {type(response)}")
+            raise PlantSipApiError(f"Unexpected response format for devices: {type(response)}, content: {response}")
 
     async def get_device_status(self, device_id: str) -> Dict[str, Any]:
         """Get status of a specific device."""

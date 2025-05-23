@@ -31,15 +31,17 @@ async def async_setup_entry(
         device = device_data.get("device", {})
         channels = device.get("channels", [])
         
-        for channel in channels:
-            channel_index = channel.get("channel_index")
-            if channel_index is not None:
+        for channel_data in channels:
+            channel_id = channel_data.get("id")
+            channel_display_idx = channel_data.get("channel_index")
+            if channel_id is not None and channel_display_idx is not None:
                 entities.append(
                     PlantSipWateringSwitch(
                         coordinator,
                         api,
                         device_id,
-                        channel_index,
+                        channel_id,
+                        channel_display_idx,
                     )
                 )
     
@@ -48,12 +50,13 @@ async def async_setup_entry(
 class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
     """Representation of a watering switch."""
 
-    def __init__(self, coordinator, api, device_id, channel_index):
+    def __init__(self, coordinator, api, device_id, channel_id, channel_display_index):
         """Initialize the switch."""
         super().__init__(coordinator)
         self._api = api
         self._device_id = device_id
-        self._channel_index = channel_index
+        self._channel_id = channel_id # Store the database PK for the channel
+        self._channel_display_index = channel_display_index # Store the user-facing channel index
         self._is_on = False
         self._attr_icon = "mdi:water" 
         
@@ -69,13 +72,14 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return unique ID for the switch."""
-        return f"{self._device_id}_watering_{self._channel_index}"
+        # Using display index for UIDs to maintain consistency if it's unique per device.
+        return f"{self._device_id}_watering_{self._channel_display_index}"
         
     @property
     def name(self):
         """Return the name of the switch."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+        return f"{device_name} Channel {self._channel_display_index} {self.translation_key}"
 
     @property
     def translation_key(self) -> str:
@@ -107,28 +111,36 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
         if not self.available:
             return {}
             
-        channel_data = next(
-            (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
-             if ch.get("channel_index") == self._channel_index),
-            {}
+        # device["channels"] stores a list of channel dicts from the API (DeviceSummary.channels items)
+        # These dicts should have "id" (PK) and "manual_water_amount".
+        channel_device_data = next(
+            (ch_data for ch_data in self.coordinator.data[self._device_id]["device"]["channels"]
+             if ch_data.get("id") == self._channel_id),  # Match by channel_id (PK)
+            {} # Default to empty dict if not found
         )
         return {
-            "manual_water_amount": channel_data.get("manual_water_amount", 0)
+            "manual_water_amount": channel_device_data.get("manual_water_amount", 0) # Default to 0 if not in dict
         }
 
     async def async_set_water_amount(self, amount: float) -> None:
         """Set the water amount for this channel."""
         if amount <= 0:
-            _LOGGER.error("Invalid water amount %f for device %s channel %s", 
-                        amount, self._device_id, self._channel_index)
+            _LOGGER.error("Invalid water amount %f for device %s channel ID %s (display index %s)", 
+                        amount, self._device_id, self._channel_id, self._channel_display_index)
             return
             
-        channel_data = next(
-            (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
-             if ch.get("channel_index") == self._channel_index),
-            {}
+        channel_device_data = next(
+            (ch_data for ch_data in self.coordinator.data[self._device_id]["device"]["channels"]
+             if ch_data.get("id") == self._channel_id), # Match by channel_id (PK)
+            None # Default to None if not found
         )
-        channel_data["manual_water_amount"] = amount
+
+        if channel_device_data is None:
+            _LOGGER.error("Channel data not found for device %s channel ID %s to set water amount.",
+                          self._device_id, self._channel_id)
+            return
+            
+        channel_device_data["manual_water_amount"] = amount # Updates local coordinator copy
         self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs):
@@ -138,21 +150,21 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             return
 
         try:
-            channel_data = next(
-                (ch for ch in self.coordinator.data[self._device_id]["device"]["channels"] 
-                 if ch.get("channel_index") == self._channel_index),
+            channel_device_data = next(
+                (ch_data for ch_data in self.coordinator.data[self._device_id]["device"]["channels"]
+                 if ch_data.get("id") == self._channel_id), # Match by channel_id (PK)
                 {}
             )
-            water_amount = channel_data.get("manual_water_amount", 0)
+            water_amount = channel_device_data.get("manual_water_amount", 0)
             
             if water_amount <= 0:
-                _LOGGER.error("Invalid water amount for device %s channel %s", 
-                            self._device_id, self._channel_index)
+                _LOGGER.error("Invalid water amount %f for device %s channel ID %s (display index %s)", 
+                            water_amount, self._device_id, self._channel_id, self._channel_display_index)
                 return
                 
             await self._api.trigger_watering(
                 self._device_id,
-                self._channel_index,
+                self._channel_id, # Use channel_id (PK) for the API call
                 water_amount,
             )
             self._is_on = True

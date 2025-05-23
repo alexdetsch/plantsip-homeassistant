@@ -34,14 +34,16 @@ async def async_setup_entry(
         channels = device.get("channels", [])
         
         # Add moisture sensor for each channel
-        for channel in channels:
-            channel_index = channel.get("channel_index")
-            if channel_index is not None:
+        for channel_data in channels:
+            channel_id = channel_data.get("id")
+            channel_display_idx = channel_data.get("channel_index")
+            if channel_id is not None and channel_display_idx is not None:
                 entities.append(
                     PlantSipMoistureSensor(
                         coordinator,
                         device_id,
-                        channel_index,
+                        channel_id,
+                        channel_display_idx,
                     )
                 )
         
@@ -57,12 +59,13 @@ async def async_setup_entry(
         ])
         
         # Add last watered sensors for each channel
-        for channel in channels:
-            channel_index = channel.get("channel_index")
-            if channel_index is not None:
+        for channel_data in channels:
+            channel_id = channel_data.get("id")
+            channel_display_idx = channel_data.get("channel_index")
+            if channel_id is not None and channel_display_idx is not None:
                 entities.extend([
-                    PlantSipLastWateredSensor(coordinator, device_id, channel_index),
-                    PlantSipLastWateringAmountSensor(coordinator, device_id, channel_index),
+                    PlantSipLastWateredSensor(coordinator, device_id, channel_id, channel_display_idx),
+                    PlantSipLastWateringAmountSensor(coordinator, device_id, channel_id, channel_display_idx),
                 ])
             
         # Add firmware version sensor
@@ -75,11 +78,12 @@ async def async_setup_entry(
 class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
     """Representation of a moisture sensor."""
 
-    def __init__(self, coordinator, device_id, channel_index):
+    def __init__(self, coordinator, device_id, channel_id, channel_display_index):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._device_id = device_id
-        self._channel_index = channel_index
+        self._channel_id = channel_id  # Store the database PK for the channel
+        self._channel_display_index = channel_display_index # Store the user-facing channel index
         self._attr_device_class = SensorDeviceClass.MOISTURE
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "%"
@@ -98,13 +102,14 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self):
         """Return unique ID for the sensor."""
-        return f"{self._device_id}_moisture_{self._channel_index}"
+        # Using display index for UIDs to maintain consistency if it's unique per device.
+        return f"{self._device_id}_moisture_{self._channel_display_index}"
         
     @property
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+        return f"{device_name} Channel {self._channel_display_index} {self.translation_key}"
 
     @property
     def translation_key(self) -> str:
@@ -116,10 +121,11 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_index)
+        # Status data keys are expected to be string representations of channel_id (PK)
+        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
+            str(self._channel_id)
         )
-        return channel_data["moisture_level"] if channel_data else None
+        return channel_status_data["moisture_level"] if channel_status_data else None
 
     @property
     def available(self) -> bool:
@@ -313,11 +319,12 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
 class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
     """Representation of a last watered timestamp sensor."""
 
-    def __init__(self, coordinator, device_id, channel_index):
+    def __init__(self, coordinator, device_id, channel_id, channel_display_index):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._device_id = device_id
-        self._channel_index = channel_index
+        self._channel_id = channel_id
+        self._channel_display_index = channel_display_index
         self._attr_device_class = SensorDeviceClass.TIMESTAMP
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         
@@ -333,13 +340,13 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self):
         """Return unique ID for the sensor."""
-        return f"{self._device_id}_last_watered_{self._channel_index}"
+        return f"{self._device_id}_last_watered_{self._channel_display_index}"
         
     @property
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+        return f"{device_name} Channel {self._channel_display_index} {self.translation_key}"
 
     @property
     def translation_key(self) -> str:
@@ -351,15 +358,15 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_index)
+        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
+            str(self._channel_id)
         )
-        if not channel_data or not channel_data.get("last_watered"):
+        if not channel_status_data or not channel_status_data.get("last_watered"):
             return None
             
         # Parse the timestamp and ensure it has timezone info
         try:
-            timestamp = channel_data["last_watered"]
+            timestamp = channel_status_data["last_watered"]
             # If the timestamp already contains timezone info, parse it directly
             if 'Z' in timestamp or '+' in timestamp:
                 return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
@@ -381,11 +388,12 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
 class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
     """Representation of a last watering amount sensor."""
 
-    def __init__(self, coordinator, device_id, channel_index):
+    def __init__(self, coordinator, device_id, channel_id, channel_display_index):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._device_id = device_id
-        self._channel_index = channel_index
+        self._channel_id = channel_id
+        self._channel_display_index = channel_display_index
         self._attr_device_class = None
         self._attr_native_unit_of_measurement = "ml"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -401,15 +409,10 @@ class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
         )
         
     @property
-    def unique_id(self):
-        """Return unique ID for the sensor."""
-        return f"{self._device_id}_last_watering_duration_{self._channel_index}"
-        
-    @property
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Channel {self._channel_index} {self.translation_key}"
+        return f"{device_name} Channel {self._channel_display_index} {self.translation_key}"
 
     @property
     def translation_key(self) -> str:
@@ -421,10 +424,10 @@ class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_index)
+        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
+            str(self._channel_id)
         )
-        return channel_data["last_watering_amount"] if channel_data else None
+        return channel_status_data["last_watering_amount"] if channel_status_data else None
 
     @property
     def available(self) -> bool:
