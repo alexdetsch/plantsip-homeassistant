@@ -35,6 +35,7 @@
         "error": {
             "cannot_connect": "Verbindung zur PlantSip API fehlgeschlagen. Überprüfen Sie Netzwerk und Host.",
             "cannot_connect_host": "Verbindung zum angegebenen Host fehlgeschlagen. Bitte überprüfen Sie die URL und das Netzwerk.",
+            "custom_host_required": "Eine Host-Adresse ist erforderlich, wenn der Standardserver nicht verwendet wird.",
             "invalid_auth": "Ungültige Authentifizierung (allgemein).",
             "invalid_auth_credentials": "Ungültiger Benutzername oder Passwort.",
             "invalid_api_key": "Ungültiger API-Schlüssel. Bitte überprüfen Sie Ihren Schlüssel und versuchen Sie es erneut.",

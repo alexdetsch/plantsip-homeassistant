@@ -38,67 +38,64 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step: Host configuration."""
-        errors = {}
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            self._config_data[CONF_USE_DEFAULT_SERVER] = user_input[CONF_USE_DEFAULT_SERVER]
-            if user_input[CONF_USE_DEFAULT_SERVER]:
-                self._config_data[CONF_HOST] = DEFAULT_SERVER_URL
-            else:
-                self._config_data[CONF_HOST] = user_input[CONF_HOST].rstrip("/")
+            submitted_use_default = user_input[CONF_USE_DEFAULT_SERVER]
+            self._config_data[CONF_USE_DEFAULT_SERVER] = submitted_use_default
+
+            final_host: str | None = None
+            if submitted_use_default:
+                final_host = DEFAULT_SERVER_URL
+                self._config_data[CONF_HOST] = final_host
+            else:  # Not using default server
+                submitted_host_value = user_input.get(CONF_HOST)
+                if not submitted_host_value:  # Covers None or empty string
+                    errors[CONF_HOST] = "custom_host_required"
+                else:
+                    final_host = submitted_host_value.rstrip("/")
+                    self._config_data[CONF_HOST] = final_host
             
-            # Test connectivity to host (basic check, not auth yet)
-            try:
-                session = async_get_clientsession(self.hass)
-                async with session.get(f"{self._config_data[CONF_HOST]}/") as response: # Check root path or a known public path
-                    if response.status >= 400 and response.status != 401 and response.status != 403 : # Allow auth errors, but not server errors
-                         raise PlantSipConnectionError(f"Host test failed with status {response.status}")
-            except (PlantSipConnectionError, aiohttp.ClientError) as e:
-                _LOGGER.error("Failed to connect to host %s: %s", self._config_data[CONF_HOST], e)
-                errors["base"] = "cannot_connect_host"
+            if final_host and not errors:  # Only test connection if host is determined and no prior errors
+                try:
+                    session = async_get_clientsession(self.hass)
+                    async with session.get(f"{final_host}/") as response:  # Check root path
+                        if response.status >= 400 and response.status not in (401, 403):
+                            raise PlantSipConnectionError(f"Host test failed with status {response.status}")
+                except (PlantSipConnectionError, aiohttp.ClientError) as e:
+                    _LOGGER.error("Failed to connect to host %s: %s", final_host, e)
+                    # Associate error with host field if it was user-provided, else base
+                    if not submitted_use_default:
+                        errors[CONF_HOST] = "cannot_connect_host"
+                    else:
+                        errors["base"] = "cannot_connect_host" # Default server connection failed
             
             if not errors:
                 return await self.async_step_auth_method()
 
-        current_use_default = self._config_data.get(CONF_USE_DEFAULT_SERVER, True)
-        current_host = self._config_data.get(CONF_HOST, "") if not current_use_default else ""
-
-        schema = {
-            vol.Required(CONF_USE_DEFAULT_SERVER, default=current_use_default): bool,
-        }
-        if not current_use_default: # Only show host field if default is not used
-             schema[vol.Required(CONF_HOST, default=current_host)] = str
-        
-        # Need to rebuild schema based on current selection for dynamic form
-        # This is tricky with voluptuous. A common pattern is to show/hide in UI or use options flow.
-        # For simplicity, if user_input is present, we use its value for CONF_USE_DEFAULT_SERVER.
-        # If not, we use the default.
-        
-        # Simplified schema logic for initial display and re-display on error.
-        # Determine current values for form fields based on user_input (if re-displaying)
-        # or _config_data (if navigating back) or defaults (initial display).
-        if user_input is not None:
-            # Form is being re-displayed (e.g., after error or user interaction changing the checkbox)
-            current_use_default_server = user_input.get(CONF_USE_DEFAULT_SERVER, True)
-            current_host_value = user_input.get(CONF_HOST, "")
+        # Schema generation for re-displaying the form
+        # Determine current values for form fields for schema generation.
+        # If user_input is present, it means we are re-displaying the form (e.g. after an error).
+        # Use values from user_input to pre-fill the form.
+        # Otherwise (initial display), use values from _config_data (if navigating back) or defaults.
+        if user_input:
+            current_use_default_server_for_schema = user_input.get(CONF_USE_DEFAULT_SERVER, True)
+            current_host_for_schema_default = user_input.get(CONF_HOST, "")
         else:
-            # Initial display of the form, or navigating back.
-            current_use_default_server = self._config_data.get(CONF_USE_DEFAULT_SERVER, True)
-            if not current_use_default_server:
-                current_host_value = self._config_data.get(CONF_HOST, "")
-            else:
-                current_host_value = "" # Host field not shown, so its default value for the input field is less critical
+            current_use_default_server_for_schema = self._config_data.get(CONF_USE_DEFAULT_SERVER, True)
+            current_host_for_schema_default = self._config_data.get(CONF_HOST, "") if not current_use_default_server_for_schema else ""
 
         # Build the schema dictionary for the form
         form_schema_dict = {
-            vol.Required(CONF_USE_DEFAULT_SERVER, default=current_use_default_server): bool,
+            vol.Required(CONF_USE_DEFAULT_SERVER, default=current_use_default_server_for_schema): bool,
         }
-        if not current_use_default_server:
-            form_schema_dict[vol.Required(CONF_HOST, default=current_host_value)] = str
+        if not current_use_default_server_for_schema:
+            form_schema_dict[vol.Required(CONF_HOST, default=current_host_for_schema_default)] = str
         
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(form_schema_dict),
-            errors=errors,
+            errors=errors, # Pass any errors to the form
             description_placeholders={"default_host": DEFAULT_SERVER_URL},
         )
 

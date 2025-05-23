@@ -35,6 +35,7 @@
         "error": {
             "cannot_connect": "Failed to connect to PlantSip API. Check network and host.",
             "cannot_connect_host": "Failed to connect to the specified host. Please check the URL and network.",
+            "custom_host_required": "A host address is required when not using the default server.",
             "invalid_auth": "Invalid authentication (general).",
             "invalid_auth_credentials": "Invalid username or password.",
             "invalid_api_key": "Invalid API Key. Please check your key and try again.",
