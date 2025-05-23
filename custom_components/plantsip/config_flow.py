@@ -73,20 +73,31 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # For simplicity, if user_input is present, we use its value for CONF_USE_DEFAULT_SERVER.
         # If not, we use the default.
         
-        # Simplified schema logic for initial display and re-display on error
-        # If user_input exists, it means we are re-displaying the form.
-        # Use the values from user_input to repopulate the form.
-        use_default_server_val = user_input.get(CONF_USE_DEFAULT_SERVER, True) if user_input else True
-        
-        data_schema_list = [
-            vol.Required(CONF_USE_DEFAULT_SERVER, default=use_default_server_val),
-        ]
-        if not use_default_server_val :
-            data_schema_list.append(vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, "") if user_input else ""))
+        # Simplified schema logic for initial display and re-display on error.
+        # Determine current values for form fields based on user_input (if re-displaying)
+        # or _config_data (if navigating back) or defaults (initial display).
+        if user_input is not None:
+            # Form is being re-displayed (e.g., after error or user interaction changing the checkbox)
+            current_use_default_server = user_input.get(CONF_USE_DEFAULT_SERVER, True)
+            current_host_value = user_input.get(CONF_HOST, "")
+        else:
+            # Initial display of the form, or navigating back.
+            current_use_default_server = self._config_data.get(CONF_USE_DEFAULT_SERVER, True)
+            if not current_use_default_server:
+                current_host_value = self._config_data.get(CONF_HOST, "")
+            else:
+                current_host_value = "" # Host field not shown, so its default value for the input field is less critical
 
+        # Build the schema dictionary for the form
+        form_schema_dict = {
+            vol.Required(CONF_USE_DEFAULT_SERVER, default=current_use_default_server): bool,
+        }
+        if not current_use_default_server:
+            form_schema_dict[vol.Required(CONF_HOST, default=current_host_value)] = str
+        
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(dict(data_schema_list)),
+            data_schema=vol.Schema(form_schema_dict),
             errors=errors,
             description_placeholders={"default_host": DEFAULT_SERVER_URL},
         )
