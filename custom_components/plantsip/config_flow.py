@@ -1,11 +1,12 @@
 """Config flow for PlantSip integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
 import voluptuous as vol
-import aiohttp # Add import for aiohttp
+import aiohttp
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_USERNAME, CONF_PASSWORD
@@ -59,9 +60,20 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if final_host and not errors:  # Only test connection if host is determined and no prior errors
                 try:
                     session = async_get_clientsession(self.hass)
-                    async with session.get(f"{final_host}/") as response:  # Check root path
-                        if response.status >= 400 and response.status not in (401, 403):
+                    timeout = aiohttp.ClientTimeout(total=10)  # 10 second timeout for initial test
+                    async with session.get(f"{final_host}/", timeout=timeout) as response:
+                        if response.status >= 500:
+                            raise PlantSipConnectionError(f"Server error: status {response.status}")
+                        elif response.status >= 400 and response.status not in (401, 403, 404):
                             raise PlantSipConnectionError(f"Host test failed with status {response.status}")
+                        # 401, 403, 404 are acceptable as they indicate the server is responding
+                        _LOGGER.debug("Host %s responded with status %d", final_host, response.status)
+                except asyncio.TimeoutError as e:
+                    _LOGGER.error("Timeout connecting to host %s: %s", final_host, e)
+                    if not submitted_use_default:
+                        errors[CONF_HOST] = "timeout_connect_host"
+                    else:
+                        errors["base"] = "timeout_connect_host"
                 except (PlantSipConnectionError, aiohttp.ClientError) as e:
                     _LOGGER.error("Failed to connect to host %s: %s", final_host, e)
                     # Associate error with host field if it was user-provided, else base
@@ -130,6 +142,7 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             api = PlantSipAPI(
                 host=self._config_data[CONF_HOST],
                 session=async_get_clientsession(self.hass),
+                timeout=30  # 30 second timeout for auth operations
             )
             try:
                 api_key = await api.exchange_credentials_for_api_key(
@@ -141,7 +154,8 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 api_with_key = PlantSipAPI(
                     host=self._config_data[CONF_HOST],
                     session=async_get_clientsession(self.hass),
-                    api_key=api_key
+                    api_key=api_key,
+                    timeout=30
                 )
                 await api_with_key.test_api_key()
 
@@ -176,28 +190,32 @@ class PlantSipConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the API key input step."""
         errors = {}
         if user_input is not None:
-            api_key = user_input[CONF_API_KEY]
-            api = PlantSipAPI(
-                host=self._config_data[CONF_HOST],
-                session=async_get_clientsession(self.hass),
-                api_key=api_key,
-            )
-            try:
-                await api.test_api_key()
-                self._config_data[CONF_API_KEY] = api_key
-                return self.async_create_entry(
-                    title="PlantSip", data=self._config_data
+            api_key = user_input[CONF_API_KEY].strip()
+            if not api_key:
+                errors[CONF_API_KEY] = "empty_api_key"
+            else:
+                api = PlantSipAPI(
+                    host=self._config_data[CONF_HOST],
+                    session=async_get_clientsession(self.hass),
+                    api_key=api_key,
+                    timeout=30
                 )
-            except PlantSipConnectionError:
-                errors["base"] = "cannot_connect"
-            except PlantSipAuthError: # This will be raised by test_api_key if key is bad
-                errors["base"] = "invalid_api_key"
-            except PlantSipApiError as e:
-                _LOGGER.error("API error during API key test: %s", e)
-                errors["base"] = "api_error_key_test"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception during API key test")
-                errors["base"] = "unknown"
+                try:
+                    await api.test_api_key()
+                    self._config_data[CONF_API_KEY] = api_key
+                    return self.async_create_entry(
+                        title="PlantSip", data=self._config_data
+                    )
+                except PlantSipConnectionError:
+                    errors["base"] = "cannot_connect"
+                except PlantSipAuthError: # This will be raised by test_api_key if key is bad
+                    errors[CONF_API_KEY] = "invalid_api_key"
+                except PlantSipApiError as e:
+                    _LOGGER.error("API error during API key test: %s", e)
+                    errors["base"] = "api_error_key_test"
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected exception during API key test")
+                    errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="api_key_input",

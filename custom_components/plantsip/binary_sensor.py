@@ -1,6 +1,9 @@
 """Binary sensor platform for PlantSip."""
 from __future__ import annotations
 
+import logging
+from typing import Optional
+
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -10,6 +13,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, MANUFACTURER
 
@@ -67,9 +72,20 @@ class PlantSipPowerSupplyBinarySensor(CoordinatorEntity, BinarySensorEntity):
         return "power_supply"
 
     @property
-    def is_on(self):
+    def is_on(self) -> Optional[bool]:
         """Return true if power supply is connected."""
-        return self.coordinator.data[self._device_id]["status"]["power_supply_connected"]
+        if not self.available:
+            return None
+            
+        try:
+            status = self.coordinator.data[self._device_id]["status"]
+            power_connected = status.get("power_supply_connected")
+            if isinstance(power_connected, bool):
+                return power_connected
+            return None
+        except (KeyError, TypeError) as err:
+            _LOGGER.warning("Error getting power supply status for device %s: %s", self._device_id, err)
+            return None
 
     @property
     def available(self) -> bool:
@@ -116,9 +132,20 @@ class PlantSipBatteryChargingBinarySensor(CoordinatorEntity, BinarySensorEntity)
         return "battery_charging"
 
     @property
-    def is_on(self):
+    def is_on(self) -> Optional[bool]:
         """Return true if battery is charging."""
-        return self.coordinator.data[self._device_id]["status"]["battery_charging"]
+        if not self.available:
+            return None
+            
+        try:
+            status = self.coordinator.data[self._device_id]["status"]
+            battery_charging = status.get("battery_charging")
+            if isinstance(battery_charging, bool):
+                return battery_charging
+            return None
+        except (KeyError, TypeError) as err:
+            _LOGGER.warning("Error getting battery charging status for device %s: %s", self._device_id, err)
+            return None
 
     @property
     def available(self) -> bool:

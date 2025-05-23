@@ -35,10 +35,12 @@
         "error": {
             "cannot_connect": "Failed to connect to PlantSip API. Check network and host.",
             "cannot_connect_host": "Failed to connect to the specified host. Please check the URL and network.",
+            "timeout_connect_host": "Timeout connecting to the specified host. Please check the URL and network.",
             "custom_host_required": "A host address is required when not using the default server.",
             "invalid_auth": "Invalid authentication (general).",
             "invalid_auth_credentials": "Invalid username or password.",
             "invalid_api_key": "Invalid API Key. Please check your key and try again.",
+            "empty_api_key": "API Key cannot be empty.",
             "api_error_credentials": "API error while obtaining API key with credentials. Check logs.",
             "api_error_key_test": "API error while testing API key. Check logs.",
             "unknown": "Unexpected error occurred. Check logs."
@@ -105,6 +107,22 @@
                         }
                     }
                 }
+            }
+        },
+        "binary_sensor": {
+            "power_supply": {
+                "name": "Power Supply"
+            },
+            "battery_charging": {
+                "name": "Battery Charging"
+            }
+        },
+        "number": {
+            "manual_water_amount": {
+                "name": "Manual Water Amount"
+            },
+            "automatic_water_amount": {
+                "name": "Automatic Water Amount"
             }
         }
     }

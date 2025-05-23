@@ -1,0 +1,18 @@
+set_water_amount:
+  name: Set Water Amount
+  description: Set the manual water amount for a specific channel
+  target:
+    entity:
+      domain: switch
+      integration: plantsip
+  fields:
+    amount:
+      name: Water Amount
+      description: Amount of water in milliliters (1-10000)
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 10000
+          step: 1
+          unit_of_measurement: ml

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any, Optional
 import pytz
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -14,6 +15,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
+
+_LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, MANUFACTURER
 
@@ -117,15 +120,34 @@ class PlantSipMoistureSensor(CoordinatorEntity, SensorEntity):
         return "moisture"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
         if not self.available:
             return None
-        # Status data keys are expected to be string representations of channel_id (PK)
-        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_id)
-        )
-        return channel_status_data["moisture_level"] if channel_status_data else None
+        
+        try:
+            status_data = self.coordinator.data[self._device_id]["status"]
+            channels_data = status_data.get("channels", {})
+            
+            if not isinstance(channels_data, dict):
+                _LOGGER.warning("Invalid channels data format for device %s", self._device_id)
+                return None
+                
+            channel_status_data = channels_data.get(str(self._channel_id))
+            if not channel_status_data or not isinstance(channel_status_data, dict):
+                return None
+                
+            moisture_level = channel_status_data.get("moisture_level")
+            if moisture_level is not None:
+                # Ensure moisture level is within reasonable bounds (0-100%)
+                if isinstance(moisture_level, (int, float)):
+                    return max(0, min(100, float(moisture_level)))
+                    
+            return None
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error getting moisture level for device %s channel %d: %s", 
+                          self._device_id, self._channel_display_index, err)
+            return None
 
     @property
     def available(self) -> bool:
@@ -173,11 +195,19 @@ class PlantSipFirmwareVersionSensor(CoordinatorEntity, SensorEntity):
         return "firmware_version"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[str]:
         """Return the state of the sensor."""
         if not self.available:
             return None
-        return self.coordinator.data[self._device_id]["status"]["firmware_version"]
+            
+        try:
+            firmware_version = self.coordinator.data[self._device_id]["status"].get("firmware_version")
+            if firmware_version and isinstance(firmware_version, str):
+                return firmware_version.strip()
+            return "Unknown"
+        except (KeyError, TypeError) as err:
+            _LOGGER.warning("Error getting firmware version for device %s: %s", self._device_id, err)
+            return "Unknown"
 
     @property
     def available(self) -> bool:
@@ -227,9 +257,29 @@ class PlantSipWaterLevelSensor(CoordinatorEntity, SensorEntity):
         return "water_level"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
-        return self.coordinator.data[self._device_id]["status"]["water_level"]
+        if not self.available:
+            return None
+            
+        try:
+            water_level = self.coordinator.data[self._device_id]["status"].get("water_level")
+            if water_level is not None and isinstance(water_level, (int, float)):
+                # Ensure water level is within reasonable bounds (0-100%)
+                return max(0, min(100, float(water_level)))
+            return None
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error getting water level for device %s: %s", self._device_id, err)
+            return None
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
 
 
 class PlantSipBatteryVoltageSensor(CoordinatorEntity, SensorEntity):
@@ -272,9 +322,31 @@ class PlantSipBatteryVoltageSensor(CoordinatorEntity, SensorEntity):
         return "battery_voltage"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
-        return self.coordinator.data[self._device_id]["status"]["battery_voltage"]
+        if not self.available:
+            return None
+            
+        try:
+            voltage = self.coordinator.data[self._device_id]["status"].get("battery_voltage")
+            if voltage is not None and isinstance(voltage, (int, float)):
+                # Reasonable voltage range for battery
+                voltage_float = float(voltage)
+                if 0 <= voltage_float <= 20:  # 20V is a reasonable upper limit
+                    return round(voltage_float, 2)
+            return None
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error getting battery voltage for device %s: %s", self._device_id, err)
+            return None
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
 
 
 class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
@@ -316,9 +388,29 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
         return "battery_level"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[int]:
         """Return the state of the sensor."""
-        return self.coordinator.data[self._device_id]["status"]["battery_level"]
+        if not self.available:
+            return None
+            
+        try:
+            battery_level = self.coordinator.data[self._device_id]["status"].get("battery_level")
+            if battery_level is not None and isinstance(battery_level, (int, float)):
+                # Ensure battery level is within 0-100%
+                return max(0, min(100, int(float(battery_level))))
+            return None
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error getting battery level for device %s: %s", self._device_id, err)
+            return None
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self._device_id in self.coordinator.data
+            and self.coordinator.data[self._device_id].get("available", False)
+        )
 
 
 class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
@@ -343,7 +435,7 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         )
         
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return unique ID for the sensor."""
         return f"{self._device_id}_last_watered_{self._channel_display_index}"
         
@@ -359,25 +451,45 @@ class PlantSipLastWateredSensor(CoordinatorEntity, SensorEntity):
         return "last_watered"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[datetime]:
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_id)
-        )
-        if not channel_status_data or not channel_status_data.get("last_watered"):
-            return None
             
-        # Parse the timestamp and ensure it has timezone info
         try:
-            timestamp = channel_status_data["last_watered"]
-            # If the timestamp already contains timezone info, parse it directly
-            if 'Z' in timestamp or '+' in timestamp:
-                return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-            # Otherwise, assume UTC and add timezone info
-            return datetime.fromisoformat(timestamp).replace(tzinfo=pytz.UTC)
-        except (ValueError, TypeError):
+            status_data = self.coordinator.data[self._device_id]["status"]
+            channels_data = status_data.get("channels", {})
+            
+            if not isinstance(channels_data, dict):
+                return None
+                
+            channel_status_data = channels_data.get(str(self._channel_id))
+            if not channel_status_data or not isinstance(channel_status_data, dict):
+                return None
+                
+            timestamp_str = channel_status_data.get("last_watered")
+            if not timestamp_str or not isinstance(timestamp_str, str):
+                return None
+                
+            # Parse the timestamp and ensure it has timezone info
+            try:
+                timestamp_str = timestamp_str.strip()
+                # If the timestamp already contains timezone info, parse it directly
+                if 'Z' in timestamp_str:
+                    return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                elif '+' in timestamp_str or timestamp_str.endswith('00:00'):
+                    return datetime.fromisoformat(timestamp_str)
+                else:
+                    # Otherwise, assume UTC and add timezone info
+                    return datetime.fromisoformat(timestamp_str).replace(tzinfo=pytz.UTC)
+            except (ValueError, TypeError) as parse_err:
+                _LOGGER.warning("Error parsing timestamp '%s' for device %s channel %d: %s", 
+                              timestamp_str, self._device_id, self._channel_display_index, parse_err)
+                return None
+                
+        except (KeyError, TypeError) as err:
+            _LOGGER.warning("Error getting last watered time for device %s channel %d: %s", 
+                          self._device_id, self._channel_display_index, err)
             return None
 
     @property
@@ -414,6 +526,11 @@ class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
         )
         
     @property
+    def unique_id(self) -> str:
+        """Return unique ID for the sensor."""
+        return f"{self._device_id}_last_watering_amount_{self._channel_display_index}"
+        
+    @property
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
@@ -425,14 +542,34 @@ class PlantSipLastWateringAmountSensor(CoordinatorEntity, SensorEntity):
         return "last_watering_amount"
 
     @property
-    def native_value(self):
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
         if not self.available:
             return None
-        channel_status_data = self.coordinator.data[self._device_id]["status"]["channels"].get(
-            str(self._channel_id)
-        )
-        return channel_status_data["last_watering_amount"] if channel_status_data else None
+            
+        try:
+            status_data = self.coordinator.data[self._device_id]["status"]
+            channels_data = status_data.get("channels", {})
+            
+            if not isinstance(channels_data, dict):
+                return None
+                
+            channel_status_data = channels_data.get(str(self._channel_id))
+            if not channel_status_data or not isinstance(channel_status_data, dict):
+                return None
+                
+            watering_amount = channel_status_data.get("last_watering_amount")
+            if watering_amount is not None and isinstance(watering_amount, (int, float)):
+                amount_float = float(watering_amount)
+                # Reasonable range for watering amount (0-10000ml)
+                if 0 <= amount_float <= 10000:
+                    return round(amount_float, 1)
+                    
+            return None
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error getting last watering amount for device %s channel %d: %s", 
+                          self._device_id, self._channel_display_index, err)
+            return None
 
     @property
     def available(self) -> bool:
