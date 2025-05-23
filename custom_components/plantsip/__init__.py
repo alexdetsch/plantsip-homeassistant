@@ -18,7 +18,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import PlantSipAPI
-from .const import DOMAIN, SCAN_INTERVAL
+from .const import DOMAIN, SCAN_INTERVAL, CONF_API_KEY # Import CONF_API_KEY
 from .exceptions import PlantSipError
 
 _LOGGER = logging.getLogger(__name__)
