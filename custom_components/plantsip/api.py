@@ -82,6 +82,13 @@ class PlantSipAPI:
         else:
             raise PlantSipApiError(f"Unexpected response format for devices: {type(response)}, content: {response}")
 
+    async def get_device_details(self, device_id: str) -> Dict[str, Any]:
+        """Get full details of a specific device."""
+        if not self._api_key:
+            raise PlantSipAuthError("API key not set for get_device_details request.")
+        # Path: /devices/{device_id}, OperationId: read_device_devices__device_id__get
+        return await self._request("GET", f"/devices/{device_id}")
+
     async def get_device_status(self, device_id: str) -> Dict[str, Any]:
         """Get status of a specific device."""
         if not self._api_key:
