@@ -1,6 +1,7 @@
 """Sensor platform for PlantSip."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Any, Optional
 import pytz

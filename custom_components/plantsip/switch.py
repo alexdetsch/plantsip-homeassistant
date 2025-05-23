@@ -192,8 +192,9 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             _LOGGER.error("Error setting water amount for device %s channel %d: %s", 
                         self._device_id, self._channel_display_index, err)
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the switch on (trigger watering)."""
+        # kwargs is required by the interface but not used
         if not self.available:
             _LOGGER.error("Device %s is not available", self._device_id)
             return
@@ -240,8 +241,9 @@ class PlantSipWateringSwitch(CoordinatorEntity, SwitchEntity):
             self._watering_in_progress = False
             self.async_write_ha_state()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the switch off (this is just a visual state change)."""
+        # kwargs is required by the interface but not used
         if not self._watering_in_progress:
             self._is_on = False
             self.async_write_ha_state()
