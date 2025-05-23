@@ -308,7 +308,12 @@ class PlantSipBatteryLevelSensor(CoordinatorEntity, SensorEntity):
     def name(self):
         """Return the name of the sensor."""
         device_name = self.coordinator.data[self._device_id]["device"]["name"]
-        return f"{device_name} Battery Level"
+        return f"{device_name} {self.translation_key}"
+
+    @property
+    def translation_key(self) -> str:
+        """Return the translation key."""
+        return "battery_level"
 
     @property
     def native_value(self):
