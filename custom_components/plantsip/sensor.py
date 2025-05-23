@@ -196,7 +196,7 @@ class PlantSipWaterLevelSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._device_id = device_id
         self._attr_device_class = SensorDeviceClass.WATER
-        self._attr_state_class = SensorStateClass.MEASUREMENT
+        # self._attr_state_class = SensorStateClass.MEASUREMENT  <- Removed as it's incompatible with SensorDeviceClass.WATER
         self._attr_native_unit_of_measurement = "%"
         self._attr_suggested_display_precision = 1
         self._attr_icon = "mdi:gauge"
