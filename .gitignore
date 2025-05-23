@@ -1,4 +1,5 @@
 .aider*
 .env
 venv/
-openapi.yaml
+
+openapi-plantsip.json
