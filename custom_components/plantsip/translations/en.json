@@ -2,22 +2,65 @@
     "config": {
         "step": {
             "user": {
-                "title": "Set up PlantSip Connection",
-                "description": "Enter your PlantSip API credentials",
+                "title": "PlantSip Host Configuration",
+                "description": "Configure the connection to your PlantSip API. The default host is {default_host}.",
                 "data": {
-                    "use_default_server": "Use default server",
-                    "host": "Custom API Host",
-                    "access_token": "Access Token"
+                    "use_default_server": "Use default PlantSip server",
+                    "host": "Custom API Host (e.g., http://localhost:8000)"
+                }
+            },
+            "auth_method": {
+                "title": "Authentication Method",
+                "description": "Choose how you want to authenticate with the PlantSip API.",
+                "data": {
+                    "auth_method": "Authentication Method"
+                }
+            },
+            "credentials": {
+                "title": "PlantSip Credentials",
+                "description": "Enter your PlantSip username and password to generate an API key.",
+                "data": {
+                    "username": "Username",
+                    "password": "Password"
+                }
+            },
+            "api_key_input": {
+                "title": "PlantSip API Key",
+                "description": "Enter your long-lived PlantSip API key.",
+                "data": {
+                    "api_key": "API Key"
                 }
             }
         },
         "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error"
+            "cannot_connect": "Failed to connect to PlantSip API. Check network and host.",
+            "cannot_connect_host": "Failed to connect to the specified host. Please check the URL and network.",
+            "invalid_auth": "Invalid authentication (general).",
+            "invalid_auth_credentials": "Invalid username or password.",
+            "invalid_api_key": "Invalid API Key. Please check your key and try again.",
+            "api_error_credentials": "API error while obtaining API key with credentials. Check logs.",
+            "api_error_key_test": "API error while testing API key. Check logs.",
+            "unknown": "Unexpected error occurred. Check logs."
         },
         "abort": {
             "already_configured": "Device is already configured"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "auth_method": "Authentication Method"
+                }
+            }
+        }
+    },
+    "selector": {
+        "auth_method": {
+            "options": {
+                "credentials": "Username and Password (generates API Key)",
+                "api_key": "Direct API Key"
+            }
         }
     },
     "entity": {

@@ -2,22 +2,65 @@
     "config": {
         "step": {
             "user": {
-                "title": "PlantSip Verbindung einrichten",
-                "description": "Geben Sie Ihre PlantSip API-Zugangsdaten ein",
+                "title": "PlantSip Host-Konfiguration",
+                "description": "Konfigurieren Sie die Verbindung zu Ihrer PlantSip API. Der Standard-Host ist {default_host}.",
                 "data": {
-                    "use_default_server": "Standard-Server verwenden",
-                    "host": "Benutzerdefinierter API-Host",
-                    "access_token": "Zugangstoken"
+                    "use_default_server": "Standard-PlantSip-Server verwenden",
+                    "host": "Benutzerdefinierter API-Host (z.B. http://localhost:8000)"
+                }
+            },
+            "auth_method": {
+                "title": "Authentifizierungsmethode",
+                "description": "Wählen Sie, wie Sie sich bei der PlantSip API authentifizieren möchten.",
+                "data": {
+                    "auth_method": "Authentifizierungsmethode"
+                }
+            },
+            "credentials": {
+                "title": "PlantSip Anmeldedaten",
+                "description": "Geben Sie Ihren PlantSip Benutzernamen und Ihr Passwort ein, um einen API-Schlüssel zu generieren.",
+                "data": {
+                    "username": "Benutzername",
+                    "password": "Passwort"
+                }
+            },
+            "api_key_input": {
+                "title": "PlantSip API-Schlüssel",
+                "description": "Geben Sie Ihren langlebigen PlantSip API-Schlüssel ein.",
+                "data": {
+                    "api_key": "API-Schlüssel"
                 }
             }
         },
         "error": {
-            "cannot_connect": "Verbindung fehlgeschlagen",
-            "invalid_auth": "Ungültige Authentifizierung",
-            "unknown": "Unerwarteter Fehler"
+            "cannot_connect": "Verbindung zur PlantSip API fehlgeschlagen. Überprüfen Sie Netzwerk und Host.",
+            "cannot_connect_host": "Verbindung zum angegebenen Host fehlgeschlagen. Bitte überprüfen Sie die URL und das Netzwerk.",
+            "invalid_auth": "Ungültige Authentifizierung (allgemein).",
+            "invalid_auth_credentials": "Ungültiger Benutzername oder Passwort.",
+            "invalid_api_key": "Ungültiger API-Schlüssel. Bitte überprüfen Sie Ihren Schlüssel und versuchen Sie es erneut.",
+            "api_error_credentials": "API-Fehler beim Abrufen des API-Schlüssels mit Anmeldedaten. Überprüfen Sie die Logs.",
+            "api_error_key_test": "API-Fehler beim Testen des API-Schlüssels. Überprüfen Sie die Logs.",
+            "unknown": "Unerwarteter Fehler aufgetreten. Überprüfen Sie die Logs."
         },
         "abort": {
             "already_configured": "Gerät ist bereits konfiguriert"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "auth_method": "Authentifizierungsmethode"
+                }
+            }
+        }
+    },
+    "selector": {
+        "auth_method": {
+            "options": {
+                "credentials": "Benutzername und Passwort (generiert API-Schlüssel)",
+                "api_key": "Direkter API-Schlüssel"
+            }
         }
     },
     "entity": {

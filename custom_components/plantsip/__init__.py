@@ -10,7 +10,6 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONF_ACCESS_TOKEN,
     CONF_HOST,
     Platform,
 )
@@ -36,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     api = PlantSipAPI(
         host=entry.data[CONF_HOST],
-        access_token=entry.data[CONF_ACCESS_TOKEN],
+        api_key=entry.data[CONF_API_KEY], # Use CONF_API_KEY
         session=async_get_clientsession(hass),
     )
 
